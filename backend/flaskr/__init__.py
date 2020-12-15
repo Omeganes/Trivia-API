@@ -77,7 +77,7 @@ def create_app():
             'success': True,
             'questions': current_questions,
             'categories': formatted_categories,
-            'current_category': 5,  # TODO: make it dynamic
+            # 'current_category': 5,  # TODO: make it dynamic
             'total_questions': len(selection),
         })
 

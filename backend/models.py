@@ -11,6 +11,7 @@ DB_PATH = 'postgresql+psycopg2://{}:{}@{}/{}'.format(DB_USER, DB_PASSWORD, DB_HO
 
 database_name = "trivia"
 database_path = "postgres://{}:{}@{}/{}".format('Raymond', '0000', 'localhost:5432', database_name)
+
 db = SQLAlchemy()
 
 '''
@@ -85,4 +86,7 @@ class Category(db.Model):
         self.type = type
 
     def format(self):
-        return self.type
+        return {
+            'id': self.id,
+            'type': self.type,
+        }
