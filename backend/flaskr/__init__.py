@@ -113,25 +113,24 @@ def create_app():
     @app.route('/questions', methods=['POST'])
     def create_question():
         body = request.get_json()
-        new_question = body.get('question')
-        if not new_question:
-            abort(422)
-        new_answer = body.get('answer')
-        if not new_answer:
-            abort(422)
-        new_difficulty = int(body.get('difficulty'))
-        if not new_difficulty or not isinstance(new_difficulty, int):
-            abort(422)
-        elif new_difficulty < 1:
-            abort(422)
-        new_category = int(body.get('category'))
-        if not new_difficulty:
-            abort(422)
-        elif new_category not in range(1, 7) \
-                or not isinstance(new_category, int):
-            abort(422)
-
         try:
+            new_question = body.get('question')
+            if not new_question:
+                abort(422)
+
+            new_answer = body.get('answer')
+            if not new_answer:
+                abort(422)
+
+            new_difficulty = int(body.get('difficulty'))
+            if new_difficulty < 1:
+                abort(422)
+
+            new_category = int(body.get('category'))
+            if not new_difficulty:
+                abort(422)
+            elif new_category not in range(1, 7):
+                abort(422)
             question = Question(question=new_question,
                                 answer=new_answer,
                                 category=new_category,
@@ -147,9 +146,9 @@ def create_app():
                 'questions': current_questions,
                 'total_questions': len(selection),
             })
+
         except Exception:
             abort(422)
-        return app
 
     '''
     Get questions based on a search term.
@@ -159,23 +158,25 @@ def create_app():
     @app.route('/questions/search', methods=['POST'])
     def search_questions():
         body = request.get_json()
-
         question_param = body.get('searchTerm')
-        selection = Question.query \
-            .filter(Question.question.ilike('%' + question_param + '%')) \
-            .order_by(Question.question) \
-            .all()
+        try:
+            selection = Question.query \
+                .filter(Question.question.ilike('%' + question_param + '%')) \
+                .order_by(Question.question) \
+                .all()
 
-        current_questions = paginate_question(request, selection)
+            current_questions = paginate_question(request, selection)
 
-        if len(current_questions) == 0:
+            if len(current_questions) == 0:
+                abort(404)
+
+            return jsonify({
+                "success": True,
+                "questions": current_questions,
+                "questions_num": len(selection),
+            })
+        except Exception:
             abort(404)
-
-        return jsonify({
-            "success": True,
-            "questions": current_questions,
-            "questions_num": len(selection),
-        })
 
     '''
     Get questions based on category.
@@ -200,7 +201,6 @@ def create_app():
             abort(404)
 
     '''
-    @TODO:
     Create a POST endpoint to get questions to play the quiz.
     This endpoint should take category and previous question parameters
     and return a random questions within the given category,
@@ -208,34 +208,36 @@ def create_app():
     '''
     @app.route('/quizzes', methods=['POST'])
     def quizzes():
-        body = request.get_json()
-        previous_questions = body.get('previous_questions')
-        quiz_category = body.get('quiz_category')
-
-        if quiz_category['type'] != "all":
-            category = Category.query\
-                .filter_by(type=quiz_category['type'])\
-                .one_or_none()
-            questions = Question.query.filter_by(category=category.id).all()
-        else:
-            questions = Question.query.all()
-
         try:
-            def create_questions_lst(question):
-                if question.id not in previous_questions:
-                    return question
-            questions_lst = [question
-                             for question in
-                             map(create_questions_lst, questions)
-                             if question is not None]
-            new_question = random.choice(questions_lst).format()
-        except Exception:
-            new_question = None
+            body = request.get_json()
+            previous_questions = body.get('previous_questions')
+            quiz_category = body.get('quiz_category')
+            if quiz_category['type'] != "all":
+                category = Category.query\
+                    .filter_by(type=quiz_category['type'])\
+                    .one_or_none()
+                questions = Question.query.filter_by(category=category.id).all()
+            else:
+                questions = Question.query.all()
 
-        return jsonify({
-            'success': True,
-            'question': new_question,
-        })
+            try:
+                def create_questions_lst(question):
+                    if question.id not in previous_questions:
+                        return question
+                questions_lst = [question
+                                 for question in
+                                 map(create_questions_lst, questions)
+                                 if question is not None]
+                new_question = random.choice(questions_lst).format()
+            except Exception:
+                new_question = None
+
+            return jsonify({
+                'success': True,
+                'question': new_question,
+            })
+        except Exception:
+            abort(422)
 
     '''
     Error handlers

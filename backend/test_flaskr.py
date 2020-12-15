@@ -51,6 +51,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertEqual(data['total_questions'], 19)
         self.assertLessEqual(len(data['questions']), 10)
+        self.assertEqual(len(data['categories']), 6)
 
     def test_get_questions_with_pages(self):
         res = self.client().get('/questions?page=2')
@@ -60,15 +61,201 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertEqual(data['total_questions'], 19)
         self.assertEqual(len(data['questions']), 9)
+        self.assertEqual(len(data['categories']), 6)
 
     def test_get_questions_with_pages_error(self):
-        res = self.client().get('/questions?page=hi')
+        res = self.client().get('/questions?page=900')
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 404)
         self.assertEqual(data['success'], False)
         self.assertEqual(data['error'], 404)
         self.assertEqual(data['message'], "Not found")
+
+    def test_delete_question(self):
+        res = self.client().delete('/questions/9')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(data['deleted'], 9)
+        self.assertEqual(len(data['questions']), 10)
+        self.assertEqual(data['total_questions'], 19)
+
+    def test_delete_question_fail(self):
+        res = self.client().delete('/questions/3')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['error'], 422)
+        self.assertEqual(data['message'], "Unprocessable")
+
+    def test_create_question_success(self):
+        res = self.client().post('/questions', json={
+                                     'question': 'Do you love me?',
+                                     'answer': 'Do you do you?',
+                                     'difficulty': '5',
+                                     'category': '2',
+                                 })
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertIsNotNone(data['created'])
+        self.assertEqual(len(data['questions']), 10)
+        self.assertEqual(data['total_questions'], 20)
+
+    def test_create_question_negative_difficulty_error(self):
+        res = self.client().post('/questions', json={
+                                     'question': 'Do you love me?',
+                                     'answer': 'Do you do you?',
+                                     'difficulty': '-1',
+                                     'category': '1',
+                                 })
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['error'], 422)
+        self.assertEqual(data['message'], "Unprocessable")
+
+    def test_create_question_out_of_range_category_error(self):
+        res = self.client().post('/questions', json={
+                                     'question': 'Do you love me?',
+                                     'answer': 'Do you do you?',
+                                     'difficulty': '1',
+                                     'category': '10',
+                                 })
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['error'], 422)
+        self.assertEqual(data['message'], "Unprocessable")
+
+    def test_create_question_question_not_provided_error(self):
+        res = self.client().post('/questions', json={
+                                     'answer': 'Do you do you?',
+                                     'difficulty': '1',
+                                     'category': '10',
+                                 })
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['error'], 422)
+        self.assertEqual(data['message'], "Unprocessable")
+
+    def test_create_question_answer_not_provided_error(self):
+        res = self.client().post('/questions', json={
+                                     'question': 'Do you love me?',
+                                     'difficulty': '1',
+                                     'category': '10',
+                                 })
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['error'], 422)
+        self.assertEqual(data['message'], "Unprocessable")
+
+    def test_create_question_difficulty_not_int_error(self):
+        res = self.client().post('/questions', json={
+                                     'question': 'Do you love me?',
+                                     'answer': 'Do you do you?',
+                                     'difficulty': 'Hey!',
+                                     'category': '10',
+                                 })
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['error'], 422)
+        self.assertEqual(data['message'], "Unprocessable")
+
+    def test_create_question_category_not_int_error(self):
+        res = self.client().post('/questions', json={
+            'question': 'Do you love me?',
+            'answer': 'Do you do you?',
+            'difficulty': '4',
+            'category': 'Hey!',
+        })
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['error'], 422)
+        self.assertEqual(data['message'], "Unprocessable")
+
+    def test_questions_search(self):
+        res = self.client().post('/questions/search', json={
+            'searchTerm': 'title',
+        })
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(len(data['questions']), 2)
+        self.assertEqual(data['questions_num'], 2)
+
+    def test_questions_search_error(self):
+        res = self.client().post('/questions/search', json={
+            'searchTerm': 'dfadfa',
+        })
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['error'], 404)
+        self.assertEqual(data['message'], "Not found")
+
+    def test_questions_by_category_success(self):
+        res = self.client().get('/categories/1/questions')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(len(data['questions']), 3)
+        self.assertEqual(data['questions_num'], 3)
+
+    def test_questions_by_category_error(self):
+        res = self.client().get('/categories/9/questions')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['error'], 404)
+        self.assertEqual(data['message'], "Not found")
+
+    def test_quizzes_success(self):
+        res = self.client().post('/quizzes', json={
+            'previous_questions': [20, 21],
+            'quiz_category': {
+                'type': 'Science',
+                'id': 1
+            }
+        })
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(data['question'], {
+            "answer": "Blood",
+            "category": 1,
+            "difficulty": 4,
+            "id": 22,
+            "question": "Hematology is a branch of medicine involving the study of what?"
+        })
+
+    def test_quizzes_error(self):
+        res = self.client().post('/quizzes')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['error'], 422)
+        self.assertEqual(data['message'], "Unprocessable")
 
 
 # Make the tests conveniently executable
