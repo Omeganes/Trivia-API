@@ -216,7 +216,8 @@ def create_app():
                 category = Category.query\
                     .filter_by(type=quiz_category['type'])\
                     .one_or_none()
-                questions = Question.query.filter_by(category=category.id).all()
+                questions = Question.query\
+                    .filter_by(category=category.id).all()
             else:
                 questions = Question.query.all()
 
