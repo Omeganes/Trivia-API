@@ -98,3 +98,8 @@ createdb trivia_test
 psql trivia_test < trivia.psql
 python test_flaskr.py
 ```
+
+OR you can run this command directly
+```
+start test.bat
+```
