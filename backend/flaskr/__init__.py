@@ -201,8 +201,8 @@ def create_app():
             abort(404)
 
     '''
-    Create a POST endpoint to get questions to play the quiz.
-    This endpoint should take category and previous question parameters
+    Get questions to play the quiz.
+    takes category and previous question parameters
     and return a random questions within the given category,
     if provided, and that is not one of the previous questions.
     '''
