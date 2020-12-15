@@ -3,9 +3,14 @@ from sqlalchemy import Column, String, Integer, create_engine
 from flask_sqlalchemy import SQLAlchemy
 import json
 
+DB_HOST = os.getenv('DB_HOST', '127.0.0.1:5432')
+DB_USER = os.getenv('DB_USER', 'Raymond')
+DB_PASSWORD = os.getenv('DB_PASSWORD', '0000')
+DB_NAME = os.getenv('DB_NAME', 'trivia')
+DB_PATH = 'postgresql+psycopg2://{}:{}@{}/{}'.format(DB_USER, DB_PASSWORD, DB_HOST, DB_NAME)
+
 database_name = "trivia"
 database_path = "postgres://{}:{}@{}/{}".format('Raymond', '0000', 'localhost:5432', database_name)
-print(database_path)
 db = SQLAlchemy()
 
 '''
@@ -14,7 +19,7 @@ setup_db(app)
 '''
 
 
-def setup_db(app, database_path=database_path):
+def setup_db(app, database_path=DB_PATH):
     app.config["SQLALCHEMY_DATABASE_URI"] = database_path
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.app = app
@@ -80,7 +85,4 @@ class Category(db.Model):
         self.type = type
 
     def format(self):
-        return {
-            'id': self.id,
-            'type': self.type
-        }
+        return self.type
